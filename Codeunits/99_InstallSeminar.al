@@ -4,20 +4,37 @@ codeunit 50199 InstallSeminar
 
     trigger OnInstallAppPerCompany();
     begin
-        if SeminarSetup.get then
+        PublishWebService();
+        if SetupExists then
             exit;
         InitSetup;
         CreateSeminar;
         CreateResources;
     end;
 
+    local procedure PublishWebService()
+    var
+        WebService: Record "Web Service";
+    begin
+        WebService.Validate("Object Type", WebService."Object Type"::Page);
+        WebService.validate("Object ID", page::"CSD WS Seminars");
+        WebService.Validate("Service Name", 'Seminars');
+        WebService.Validate(Published, true);
+        if WebService.Insert(true) then;
+    end;
+
     local procedure InitSetup();
     var
         NoSerie: Record "No. Series";
         NoSerieLine: Record "No. Series Line";
+        SeminarSetup: Record "CSD Seminar Setup";
         SourceCodeSetup: Record "Source Code Setup";
         SourceCode: Record "Source Code";
     begin
+        SetupExists := SeminarSetup.get;
+        if SetupExists then
+            exit;
+
         SeminarSetup.init;
         if SeminarSetup.Insert then;
 
@@ -60,26 +77,22 @@ codeunit 50199 InstallSeminar
         SourceCode.Code := 'SEMINAR';
         if SourceCode.Insert then;
         SourceCodeSetup.get;
-        //SourceCodeSetup."CSD Seminar" := 'SEMINAR';
+        SourceCodeSetup."CSD Seminar" := 'SEMINAR';
         SourceCodeSetup.modify;
     end;
 
     local procedure CreateSeminar();
     var
         Seminar: Record "CSD Seminar";
-        Course: Record Course;
-
     begin
-        if course.FindSet() then repeat
-            Seminar."No." := Course.Code;
-            Seminar.Validate(Name, Course.Description);
-            Seminar.Validate("Gen. Prod. Posting Group", 'MISC');
-            Seminar."Maximum Participants" := 12;
-            Seminar."Minimum Participants" := 4;
-            Seminar."Seminar Duration" := course.Duration;
-            Seminar."Seminar Price" := course.Price;
-            if Seminar.insert then;
-        until course.Next = 0;
+        Seminar."No." := 'SOLDEV';
+        Seminar.Validate(Name, 'Solution Development');
+        Seminar.Validate("Gen. Prod. Posting Group", 'MISC');
+        Seminar."Maximum Participants" := 12;
+        Seminar."Minimum Participants" := 4;
+        Seminar."Seminar Duration" := 5;
+        Seminar."Seminar Price" := 1000;
+        if Seminar.insert then;
     end;
 
     local procedure CreateResources();
@@ -102,8 +115,4 @@ codeunit 50199 InstallSeminar
 
     var
         SetupExists: Boolean;
-        SeminarSetup: Record "CSD Seminar Setup";
-
-
-
 }
